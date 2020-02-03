@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>CVR Network Analysis Tool</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://d3js.org/d3.v4.js"></script>
+    <script>
+        var plotData = {{plot | safe}};
+        console.log(plotData)
+    </script>
+    <head lang="en">
+        <meta charset="UTF-8">
+        <style>
+        </style>
+    </head>
+    <body>
+        <div id="plot">
+        </div>
+        <div>
+        </div>
+    </body>
+<script>
+    // set the dimensions and margins of the graph
+    var margin = {top: 80, right: 150, bottom: 30, left: 60},
+        width = 660 - margin.left - margin.right,
+        height = 400 - margin.top - margin.bottom;
+
+    // append the svg object to the body of the page
+    var svg = d3.select("#plot")
+      .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+        .attr("transform",
+              "translate(" + margin.left + "," + margin.top + ")");
+    // Add X axis --> it is a date format
+  var x = d3.scaleLinear()
+    .domain([1,15])
+    .range([ 0, width ]);
+  svg.append("g")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(x));
+
+  // Add Y axis
+  var y = d3.scaleLinear()
+    .domain([0, 16000])
+    .range([ height, 0 ]);
+  svg.append("g")
+    .call(d3.axisLeft(y));
+
+// This allows to find the closest X index of the mouse:
+var bisect = d3.bisector(function(d) { return d.C; }).left;
+
+// Create the circle that travels along the curve of chart
+var focus = svg
+  .append('g')
+    .append('circle')
+    .style("fill", "red")
+    .attr("stroke", "black")
+    .attr('r', 8.5)
+    .style("opacity", 0)
+svg.append("image")
+  .attr("xlink:href", "static/virus.png")
+  .attr('width', 40)
+  .attr('height', 40)
+  .attr('x',10)
+  //.attr('r', 8.5)
+  //.style("opacity", 0)
+// Create the text that travels along the curve of chart
+var focusText = svg
+  .append('g')
+  .append('text')
+    .style("opacity", 0)
+    .attr("text-anchor", "left")
+    .attr("alignment-baseline", "middle")
+
+// Create a rect on top of the svg area: this rectangle recovers mouse position
+svg
+  .append('rect')
+  .style("fill", "none")
+  .style("pointer-events", "all")
+  .attr('width', width)
+  .attr('height', height)
+  .on('mouseover', mouseover)
+  .on('mousemove', mousemove)
+  .on('mouseout', mouseout);
+
+
+   // Add the line
+  svg
+    .append("path")
+    .datum(plotData)
+    .attr("fill", "none")
+    .attr("stroke", "black")
+    .attr("stroke-width", 1.5)
+    .attr("d", d3.line()
+      .x(function(d) { return x(d.C) })
+      .y(function(d) { return y(d.confirmedcases) })
+      )
+
+// What happens when the mouse move -> show the annotations at the right positions.
+function mouseover() {
+    focus.style("opacity", 1)
+    focusText.style("opacity",1)
+  }
+
+  function mousemove() {
+    // recover coordinate we need
+    var x0 = x.invert(d3.mouse(this)[0]);
+    var i = bisect(plotData, x0, 1);
+    selectedData = plotData[i]
+    focus
+      .attr("cx", x(selectedData.C))
+      .attr("cy", y(selectedData.confirmedcases))
+      .attr("x", x(selectedData.C))
+      .attr("y", y(selectedData.confirmedcases)-40)
+    focusText
+      .html("Dag nr:" + selectedData.C + "  -  " + "Antal smittede:" + selectedData.confirmedcases)
+      .attr("x", x(selectedData.C)-100)
+      .attr("y", y(selectedData.confirmedcases)-15)
+    }
+  function mouseout() {
+    focus.style("opacity", 0)
+    focusText.style("opacity", 0)
+  }
+
+</script>
+</html>
